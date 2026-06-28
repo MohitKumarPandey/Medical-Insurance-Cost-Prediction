@@ -2,99 +2,98 @@ import streamlit as st
 import joblib
 import pandas as pd
 
-# Load Trained Model
+# Load model
 model = joblib.load("Medical_InsuranceCostPrediction.pkl")
 
+# ---------------- PAGE CONFIG ---------------- #
 st.set_page_config(
-    page_title="Medical Insurance Cost Prediction",
-    page_icon="🏥",
+    page_title="Insurance Cost Predictor",
+    page_icon="💰",
     layout="centered"
 )
 
-st.title("🏥 Medical Insurance Cost Prediction")
-st.write("Enter the details below to predict your medical insurance charges.")
+# ---------------- CUSTOM CSS ---------------- #
+st.markdown("""
+    <style>
+    .main {
+        background-color: #0f172a;
+        color: white;
+    }
 
-# ---------------- Inputs ---------------- #
+    .title {
+        text-align: center;
+        font-size: 40px;
+        font-weight: bold;
+        color: #38bdf8;
+    }
 
-age = st.number_input(
-    "Enter Your Age",
-    min_value=18,
-    max_value=100,
-    step=1
-)
+    .subtitle {
+        text-align: center;
+        color: #94a3b8;
+        margin-bottom: 30px;
+    }
 
-gender = st.selectbox(
-    "Select Gender",
-    ["male", "female"]
-)
+    .result-box {
+        background: linear-gradient(135deg, #22c55e, #16a34a);
+        padding: 20px;
+        border-radius: 12px;
+        text-align: center;
+        font-size: 22px;
+        font-weight: bold;
+        color: white;
+    }
 
-bmi = st.number_input(
-    "Enter BMI",
-    min_value=10.0,
-    max_value=60.0,
-    step=0.1
-)
+    .stButton>button {
+        background-color: #38bdf8;
+        color: black;
+        font-weight: bold;
+        border-radius: 10px;
+        padding: 10px;
+    }
 
-childNo = st.number_input(
-    "Number of Children",
-    min_value=0,
-    max_value=10,
-    step=1
-)
+    </style>
+""", unsafe_allow_html=True)
 
-smoker = st.selectbox(
-    "Are You a Smoker?",
-    ["yes", "no"]
-)
+# ---------------- TITLE ---------------- #
+st.markdown("<div class='title'>💰 Insurance Cost Predictor</div>", unsafe_allow_html=True)
+st.markdown("<div class='subtitle'>Enter details to estimate your medical insurance cost</div>", unsafe_allow_html=True)
 
-region = st.selectbox(
-    "Select Region",
-    [
-        "northeast",
-        "northwest",
-        "southeast",
-        "southwest"
-    ]
-)
+# ---------------- INPUTS ---------------- #
+col1, col2 = st.columns(2)
 
-# ---------------- Prediction ---------------- #
+with col1:
+    age = st.number_input("Age", 18, 100, 25)
+    bmi = st.number_input("BMI", 10.0, 60.0, 25.0)
+    children = st.number_input("Children", 0, 10, 0)
 
-if st.button("Predict Insurance Cost"):
+with col2:
+    gender = st.selectbox("Gender", ["male", "female"])
+    smoker = st.selectbox("Smoker", ["yes", "no"])
+    region = st.selectbox("Region", ["northeast", "northwest", "southeast", "southwest"])
 
-    # Label Encoding (same as your notebook)
-    gender = 1 if gender == "male" else 0
-    smoker = 1 if smoker == "yes" else 0
+# ---------------- PREDICTION ---------------- #
+if st.button("Predict Insurance Cost 🚀"):
 
-    # One Hot Encoding
-    region_northeast = False
-    region_northwest = False
-    region_southeast = False
-    region_southwest = False
+    sex = 1 if gender == "male" else 0
+    smoke = 1 if smoker == "yes" else 0
 
-    if region == "northeast":
-        region_northeast = True
+    data = {
+        "age": age,
+        "sex": sex,
+        "bmi": bmi,
+        "children": children,
+        "smoker": smoke,
+        "region_northeast": 1 if region == "northeast" else 0,
+        "region_northwest": 1 if region == "northwest" else 0,
+        "region_southeast": 1 if region == "southeast" else 0,
+        "region_southwest": 1 if region == "southwest" else 0,
+    }
 
-    elif region == "northwest":
-        region_northwest = True
+    df = pd.DataFrame([data])
+    prediction = model.predict(df)[0]
 
-    elif region == "southeast":
-        region_southeast = True
-
-    else:
-        region_southwest = True
-
-    newData = pd.DataFrame({
-        "age":[age],
-        "sex":[gender],
-        "bmi":[bmi],
-        "children":[childNo],
-        "smoker":[smoker],
-        "region_northeast":[region_northeast],
-        "region_northwest":[region_northwest],
-        "region_southeast":[region_southeast],
-        "region_southwest":[region_southwest]
-    })
-
-    prediction = model.predict(newData)
-
-    st.success(f"Estimated Insurance Cost: ${prediction[0]:,.2f}")
+    st.markdown(f"""
+        <div class='result-box'>
+            💰 Estimated Insurance Cost: ${prediction:,.2f}
+        </div>
+    """, unsafe_allow_html=True)
